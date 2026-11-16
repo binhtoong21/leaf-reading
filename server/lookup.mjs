@@ -13,6 +13,8 @@ export function lookupConfig(env=process.env){
 }
 
 const SENTENCE_END=/[.!?…]["'”’)\]]*(?=\s|$)|\n/g;
+const ABBREV=/[\s(.](?:[A-Za-z]|Mr|Mrs|Ms|Dr|Prof|St|Jr|Sr|Inc|Ltd|Co|Corp|vs|etc|No|approx)$/;
+const isBoundary=(content,at,mark)=>mark==='\n'||!mark.startsWith('.')||!ABBREV.test((at<20?' ':'')+content.slice(Math.max(0,at-20),at));
 export function extractContext(content,start,end){
   if(typeof content!=='string'||!Number.isInteger(start)||!Number.isInteger(end)||start<0||end<=start||end>content.length) throw new LookupError(400,'Vị trí tra từ không hợp lệ.');
   if(end-start>200) throw new LookupError(400,'Chỉ tra được tối đa 200 ký tự.');
@@ -20,10 +22,9 @@ export function extractContext(content,start,end){
   if(!quote.trim()||quote!==quote.trim()) throw new LookupError(400,'Vị trí tra từ không hợp lệ.');
   const winStart=Math.max(0,start-400), winEnd=Math.min(content.length,end+400);
   let from=winStart;
-  for(const m of content.slice(winStart,start).matchAll(SENTENCE_END)) from=winStart+m.index+m[0].length;
+  for(const m of content.slice(winStart,start).matchAll(SENTENCE_END)){const at=winStart+m.index;if(isBoundary(content,at,m[0]))from=at+m[0].length;}
   let to=winEnd;
-  const next=content.slice(end,winEnd).match(new RegExp(SENTENCE_END.source));
-  if(next) to=end+next.index+next[0].length;
+  for(const m of content.slice(end,winEnd).matchAll(SENTENCE_END)){const at=end+m.index;if(isBoundary(content,at,m[0])){to=at+m[0].length;break;}}
   return {quote,before:content.slice(from,start).trimStart(),after:content.slice(end,to).trimEnd()};
 }
 
