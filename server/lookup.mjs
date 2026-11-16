@@ -103,6 +103,10 @@ export async function callProvider(config,messages,{fetchImpl=fetch,signal}={}){
     if(res.status===401||res.status===403) throw new LookupError(502,'API key không hợp lệ hoặc không có quyền.');
     if(res.status===429) throw Object.assign(retryable(new LookupError(429,'Nhà cung cấp AI đang giới hạn lượt gọi. Thử lại sau.')),{providerStatus:429});
     if(res.status===503) throw Object.assign(retryable(new LookupError(503,'Nhà cung cấp AI đang quá tải. Thử lại sau giây lát.')),{providerStatus:503});
+    if(res.status===400&&config.responseFormat!=='none'){
+      let detail='';try{detail=JSON.stringify(await res.json()).slice(0,1000)}catch{}
+      if(/response_format|json_schema|json_object|schema|mime/i.test(detail)) throw new LookupError(502,`Nhà cung cấp AI không hỗ trợ định dạng ${config.responseFormat==='json_object'?'json_object':'json_schema'}. Đặt LOOKUP_RESPONSE_FORMAT=${config.responseFormat==='json_object'?'none':'json_object'} trong .env rồi khởi động lại app.`);
+    }
     const err=new LookupError(502,`Nhà cung cấp AI báo lỗi (${res.status}).`);
     throw res.status>=500?Object.assign(retryable(err),{providerStatus:res.status}):err;
   }
@@ -133,16 +137,19 @@ CREATE TABLE IF NOT EXISTS lookup_usage (day TEXT PRIMARY KEY, count INTEGER NOT
       if(inflight){if(inflight.key===key) return inflight.promise;throw new LookupError(429,'Đang tra một mục khác, thử lại sau giây lát.');}
       const capReached=()=>(getUsage.get(dayOf(now()))?.count??0)>=config.dailyLimit;
       if(capReached()) throw new LookupError(429,`Đã dùng hết ${config.dailyLimit} lượt tra hôm nay.`);
+      const wait=(ms,signal)=>new Promise(r=>{if(signal.aborted)return r();const t=setTimeout(r,ms);signal.addEventListener('abort',()=>{clearTimeout(t);r()},{once:true});});
       const attempt=async(messages,signal)=>{
-        const models=[config.model,config.model,...(config.fallbackModels??[])];
-        let last;
-        for(let i=0;i<models.length;i++){
-          if(i===1&&last?.providerStatus===429) continue;
-          if(i>0&&capReached()) throw last;
-          if(i===1) await new Promise(r=>setTimeout(r,retryDelayMs));
+        const plan=[config.model,...(config.fallbackModels??[]),config.model];
+        let last,firstStatus;
+        for(let i=0;i<plan.length;i++){
+          const primaryRetry=i===plan.length-1;
+          if(primaryRetry&&firstStatus===429) break;
+          if(i>0&&capReached()) break;
+          if(primaryRetry) await wait(retryDelayMs,signal);
+          if(signal.aborted) break;
           bump.run(dayOf(now()));
-          try{return await callProvider({...config,model:models[i]},messages,{fetchImpl,signal})}
-          catch(e){if(!e.retryable) throw e;last=e;}
+          try{return await callProvider({...config,model:plan[i]},messages,{fetchImpl,signal})}
+          catch(e){if(!e.retryable) throw e;last=e;if(i===0)firstStatus=e.providerStatus;}
         }
         throw last;
       };

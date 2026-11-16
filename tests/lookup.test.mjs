@@ -213,3 +213,25 @@ test('lookupConfig parses fallback models and response format', () => {
  assert.equal(c.responseFormat,'json_schema');
  assert.equal(c.baseUrl,'http://x/v1');
 });
+test('service tries the fallback before retrying the primary after a 503', async () => {
+ const f=fakeFetch((url,init)=>JSON.parse(init.body).model==='m'?reply('',{status:503}):reply(JSON.stringify(good)));
+ const s=createLookupService({db:new DatabaseSync(':memory:'),config:{...config,fallbackModels:['m2']},fetchImpl:f,retryDelayMs:0});
+ assert.equal((await s.lookup(ctx)).entry.headword,'textile');
+ assert.deepEqual(f.calls.map(c=>JSON.parse(c.init.body).model),['m','m2']);
+ assert.equal(s.status().usedToday,2);
+});
+test('service does not charge or call again when the deadline expires during backoff', async () => {
+ const f=fakeFetch(()=>reply('',{status:503}));
+ const s=createLookupService({db:new DatabaseSync(':memory:'),config:{...config,timeoutMs:30},fetchImpl:f,retryDelayMs:5000});
+ const keepAlive=setInterval(()=>{},10);
+ try{await assert.rejects(s.lookup(ctx),e=>e.status===503);}finally{clearInterval(keepAlive)}
+ assert.equal(f.calls.length,1);
+ assert.equal(s.status().usedToday,1);
+});
+test('callProvider explains a rejected response format', async () => {
+ const bad={ok:false,status:400,json:async()=>({error:{message:'Invalid value for response_format: json_schema is not supported'}})};
+ await assert.rejects(callProvider(config,[],{fetchImpl:async()=>bad}),e=>e.status===502&&/LOOKUP_RESPONSE_FORMAT=json_object/.test(e.message));
+ await assert.rejects(callProvider({...config,responseFormat:'json_object'},[],{fetchImpl:async()=>bad}),e=>/LOOKUP_RESPONSE_FORMAT=none/.test(e.message));
+ const other={ok:false,status:400,json:async()=>({error:{message:'Unknown model'}})};
+ await assert.rejects(callProvider(config,[],{fetchImpl:async()=>other}),e=>/\(400\)/.test(e.message));
+});
