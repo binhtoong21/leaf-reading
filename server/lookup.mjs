@@ -1,6 +1,6 @@
 import {createHash} from 'node:crypto';
 
-export const PROMPT_VERSION=1;
+export const PROMPT_VERSION=3;
 export class LookupError extends Error{constructor(status,message){super(message);this.status=status;}}
 
 export function lookupConfig(env=process.env){
@@ -42,7 +42,7 @@ Reply with ONLY one JSON object, no markdown, with exactly these keys:
  "senseInContext": string, 1-2 Vietnamese sentences on what it means in this exact context,
  "collocations": up to 4 objects {"en": a common collocation, "vi": its Vietnamese meaning},
  "examples": 1-2 objects {"en": a NEW natural example sentence, not the passage sentence, "vi": its Vietnamese translation},
- "contrasts": 0-3 objects {"word": an easily confused English word or phrase, "explanation": Vietnamese explanation of the difference in usage}; [] if none is genuinely useful,
+ "contrasts": 1-3 objects {"word": a near-synonym or a word learners often confuse it with in meaning, "explanation": Vietnamese explanation of how it differs in meaning or usage}; prefer near-synonyms over words that only look or sound alike. Most common words have a useful one (e.g. textile vs fabric vs clothing, demand vs need, rise vs raise); use [] only if none is genuinely useful,
  "tip": string, a short Vietnamese memory tip; "" if none is genuinely helpful,
  "insufficientContext": boolean, true if the context is too short to choose a sense
 }
