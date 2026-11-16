@@ -23,3 +23,13 @@
 .lookup-example span{color:var(--muted)}
 .lookup-example+.lookup-example{margin-top:8px!important}
 .margin-note small,.knowledge-term small{white-space:pre-line;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+.note-view h3{font-size:21px;font-weight:500;line-height:1.5;margin:12px 0 4px}
+.note-text{font-size:13px;line-height:1.8;color:var(--ink);overflow-wrap:anywhere}
+.modal .note-text p{margin:0;font-size:13px}
+.note-text h4{margin:14px 0 2px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.note-text .note-gap{height:4px}
+.modal .note-text .note-item{padding-left:16px;position:relative}
+.note-text .note-item::before{content:'•';position:absolute;left:3px;color:var(--muted)}
+.modal .note-text .note-translation{color:var(--muted)}
+.modal textarea.note-input{max-height:50dvh;field-sizing:content;min-height:7em}
