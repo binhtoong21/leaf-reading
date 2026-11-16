@@ -4,22 +4,36 @@ import {fileURLToPath} from 'node:url';
 import {resolve,extname,sep} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {createStore,schedule,validateLibrary} from './store.mjs';
+import {createLookupService,extractContext,LookupError} from './lookup.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
+try{process.loadEnvFile(resolve(root,'.env'))}catch(e){if(e?.code!=='ENOENT')console.warn('Không đọc được file .env:',e.message)}
 const store=createStore(resolve(root,'data/leaf.sqlite'));
-const send=(res,code,data)=>{res.writeHead(code,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
+const lookup=createLookupService({db:store.db});
+const sessionToken=randomUUID();
+const send=(res,code,data)=>{res.writeHead(code,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data));};
 const server=createServer(async(req,res)=>{
   try{
     const url=new URL(req.url,'http://127.0.0.1');
     if(url.pathname.startsWith('/api/')){
+      if(!/^(127\.0\.0\.1|localhost):(4318|5173)$/.test(req.headers.host||'')) return send(res,403,{error:'Host không được phép.'});
       if(req.headers.origin && !/^http:\/\/(127\.0\.0\.1|localhost):(4318|5173)$/.test(req.headers.origin)) return send(res,403,{error:'Origin không được phép.'});
       let body={};
       if(!['GET','HEAD'].includes(req.method)){
         if(!req.headers['content-type']?.startsWith('application/json')) return send(res,415,{error:'Cần dữ liệu JSON.'});
-        let raw=''; for await(const chunk of req){raw+=chunk;if(Buffer.byteLength(raw)>12_000_000) return send(res,413,{error:'Dữ liệu vượt quá 12 MB.'});}
+        const maxBody=url.pathname==='/api/lookup'?4096:12_000_000;
+        let raw=''; for await(const chunk of req){raw+=chunk;if(Buffer.byteLength(raw)>maxBody) return send(res,413,{error:maxBody===4096?'Yêu cầu tra từ quá lớn.':'Dữ liệu vượt quá 12 MB.'});}
         try{body=JSON.parse(raw);}catch{return send(res,400,{error:'JSON không hợp lệ.'});}
       }
       const route=url.pathname.slice(4);
       if(route==='/library'&&req.method==='GET')return send(res,200,store.read());
+      if(route==='/session'&&req.method==='GET')return send(res,200,{token:sessionToken,lookup:lookup.status()});
+      if(route==='/lookup'&&req.method==='POST'){
+        if(req.headers['x-leaf-token']!==sessionToken)return send(res,403,{error:'Phiên làm việc đã thay đổi. Tải lại trang.',code:'bad_token'});
+        const passage=store.read().passages.find(p=>p.id===body?.passageId);
+        if(!passage)return send(res,404,{error:'Không tìm thấy bài đọc.'});
+        try{return send(res,200,await lookup.lookup(extractContext(passage.content,body.start,body.end)));}
+        catch(e){if(e instanceof LookupError)return send(res,e.status,{error:e.message});throw e;}
+      }
       if(route==='/import'&&req.method==='POST'){validateLibrary(body);return send(res,200,store.write(body));}
       if(route==='/passages'&&req.method==='POST')return send(res,201,store.mutate(d=>d.passages.unshift({...body,id:randomUUID(),createdAt:new Date().toISOString(),status:'unread'})));
       const match=route.match(/^\/(passages|annotations)\/([^/]+)(\/review)?$/);

@@ -29,7 +29,7 @@ export function createStore(path) {
   if(!db.prepare('SELECT id FROM library WHERE id=1').get()) db.prepare('INSERT INTO library VALUES (1, ?)').run(JSON.stringify(seed()));
   const read=()=>JSON.parse(db.prepare('SELECT data FROM library WHERE id=1').get().data);
   const write=data=>{validateLibrary(data);db.prepare('UPDATE library SET data=? WHERE id=1').run(JSON.stringify(data));return data;};
-  return {read,write,close:()=>db.close(), mutate(fn){const data=read();fn(data);return write(data);}};
+  return {db,read,write,close:()=>db.close(), mutate(fn){const data=read();fn(data);return write(data);}};
 }
 export function schedule(annotation,rating,now=new Date()) {
   if(!['again','hard','good','easy'].includes(rating)) fail('Mức độ ghi nhớ không hợp lệ.');
