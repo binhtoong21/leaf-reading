@@ -8,3 +8,6 @@ test('formatNote renders all filled sections',()=>{
 test('formatNote skips empty sections and adds the tip',()=>{
  assert.equal(formatNote({...entry,ipa:'',pos:'',collocations:[],examples:[],contrasts:[],tip:'Nhớ “text” = dệt.'}),'textile\nTrong bài: Ngành dệt may.\n\nMẹo ghi nhớ: Nhớ “text” = dệt.');
 });
+test('formatNote adds the word family after collocations',()=>{
+ assert.equal(formatNote({...entry,examples:[],contrasts:[],wordFamily:[{word:'textiles',pos:'danh từ',vi:'hàng dệt'},{word:'texture',pos:'',vi:'kết cấu'}]}),'textile /ˈtek.staɪl/ · danh từ\nTrong bài: Ngành dệt may.\n\nCách dùng thường gặp:\n- textile industry: ngành dệt may\n\nHọ từ:\n- textiles (danh từ): hàng dệt\n- texture: kết cấu');
+});

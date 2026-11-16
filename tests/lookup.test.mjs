@@ -8,7 +8,9 @@ import {
   createLookupService,
   buildMessages,
   SYSTEM_PROMPT,
-  LookupError
+  LookupError,
+  ENTRY_SCHEMA,
+  lookupConfig
 } from '../server/lookup.mjs';
 
 const good={headword:'textile',ipa:'/ˈtek.staɪl/',pos:'danh từ',kind:'vocabulary',meaningVi:'hàng dệt, dệt may',senseInContext:'Ngành dệt may.',collocations:[{en:'textile industry',vi:'ngành dệt may'}],examples:[{en:'Vietnam has a large textile industry.',vi:'Việt Nam có ngành dệt may lớn.'}],contrasts:[{word:'fabric',explanation:'Vải, chất liệu cụ thể.'}],tip:'',insufficientContext:false};
@@ -105,7 +107,7 @@ test('callProvider times out', async () => {
 test('service caches successful lookups', async () => {
   const db = new DatabaseSync(':memory:');
   const fetchImpl = fakeFetch(async () => reply(JSON.stringify(good)));
-  const service = createLookupService({ db, config, fetchImpl });
+  const service = createLookupService({ db, config, fetchImpl, retryDelayMs: 0 });
   const first = await service.lookup(ctx);
   assert.equal(first.cached, false);
   const second = await service.lookup(ctx);
@@ -117,7 +119,7 @@ test('service caches successful lookups', async () => {
 test('service enforces the daily cap and counts failed calls', async () => {
   const db = new DatabaseSync(':memory:');
   const fetchImpl = fakeFetch(async () => ({ ok: false, status: 500, json: async () => ({}) }));
-  const service = createLookupService({ db, config: { ...config, dailyLimit: 1 }, fetchImpl });
+  const service = createLookupService({ db, config: { ...config, dailyLimit: 1 }, fetchImpl, retryDelayMs: 0 });
   await assert.rejects(
     async () => service.lookup(ctx),
     e => e.status === 502
@@ -132,7 +134,7 @@ test('service enforces the daily cap and counts failed calls', async () => {
 test('service without configuration returns 503 on cache miss', async () => {
   const db = new DatabaseSync(':memory:');
   const fetchImpl = fakeFetch(async () => reply(JSON.stringify(good)));
-  const service = createLookupService({ db, config: { ...config, configured: false }, fetchImpl });
+  const service = createLookupService({ db, config: { ...config, configured: false }, fetchImpl, retryDelayMs: 0 });
   await assert.rejects(
     async () => service.lookup(ctx),
     e => e.status === 503
@@ -146,7 +148,7 @@ test('service dedupes identical concurrent requests and rejects a different one'
     await new Promise(r => setTimeout(r, 20));
     return reply(JSON.stringify(good));
   });
-  const service = createLookupService({ db, config, fetchImpl });
+  const service = createLookupService({ db, config, fetchImpl, retryDelayMs: 0 });
   const p1 = service.lookup(ctx);
   const p2 = service.lookup(ctx);
   const p3 = service.lookup({ ...ctx, quote: 'other' });
@@ -168,4 +170,46 @@ test('extractContext keeps context around abbreviations',()=>{
  assert.deepEqual(extractContext(a,s,s+4),{quote:'bank',before:'She deposited her paycheck at the U.S. ',after:'.'});
  const b='Hello. Mr. Smith will book the venue. Done.';const t=b.indexOf('book');
  assert.deepEqual(extractContext(b,t,t+4),{quote:'book',before:'Mr. Smith will ',after:' the venue.'});
+});
+
+test('validateEntry keeps word family, drops the headword itself, defaults to []', () => {
+ const e=validateEntry({...good,wordFamily:[{word:'Textile',pos:'danh từ',vi:'x'},{word:'textiles',pos:'danh từ',vi:'hàng dệt'}]});
+ assert.deepEqual(e.wordFamily,[{word:'textiles',pos:'danh từ',vi:'hàng dệt'}]);
+ assert.deepEqual(validateEntry(good).wordFamily,[]);
+ assert.throws(()=>validateEntry({...good,wordFamily:[{word:'',vi:'x'}]}),e=>e.status===502);
+});
+test('callProvider sends json_schema by default and honours other formats', async () => {
+ for(const [format,expected] of [[undefined,'json_schema'],['json_object','json_object'],['none',undefined]]){
+  const f=fakeFetch(()=>reply(JSON.stringify(good)));
+  await callProvider({...config,responseFormat:format},[],{fetchImpl:f});
+  const sent=JSON.parse(f.calls[0].init.body);
+  assert.equal(sent.response_format?.type,expected);
+  if(expected==='json_schema') assert.deepEqual(sent.response_format.json_schema.schema,ENTRY_SCHEMA);
+ }
+});
+test('service retries a 503 once on the same model', async () => {
+ let n=0;const f=fakeFetch(()=>++n===1?reply('',{status:503}):reply(JSON.stringify(good)));
+ const s=createLookupService({db:new DatabaseSync(':memory:'),config,fetchImpl:f,retryDelayMs:0});
+ const r=await s.lookup(ctx);
+ assert.equal(r.entry.headword,'textile');
+ assert.deepEqual(f.calls.map(c=>JSON.parse(c.init.body).model),['m','m']);
+ assert.equal(s.status().usedToday,2);
+});
+test('service falls back to the next model on 429 without a same-model retry', async () => {
+ const f=fakeFetch((url,init)=>JSON.parse(init.body).model==='m'?reply('',{status:429}):reply(JSON.stringify(good)));
+ const s=createLookupService({db:new DatabaseSync(':memory:'),config:{...config,fallbackModels:['m2']},fetchImpl:f,retryDelayMs:0});
+ assert.equal((await s.lookup(ctx)).entry.headword,'textile');
+ assert.deepEqual(f.calls.map(c=>JSON.parse(c.init.body).model),['m','m2']);
+});
+test('service does not retry an invalid API key', async () => {
+ const f=fakeFetch(()=>reply('',{status:401}));
+ const s=createLookupService({db:new DatabaseSync(':memory:'),config:{...config,fallbackModels:['m2']},fetchImpl:f,retryDelayMs:0});
+ await assert.rejects(s.lookup(ctx),e=>e.status===502&&/API key/.test(e.message));
+ assert.equal(f.calls.length,1);
+});
+test('lookupConfig parses fallback models and response format', () => {
+ const c=lookupConfig({LOOKUP_BASE_URL:'http://x/v1/',LOOKUP_MODEL:'a',LOOKUP_FALLBACK_MODELS:' b, a ,c,,',LOOKUP_RESPONSE_FORMAT:'weird'});
+ assert.deepEqual(c.fallbackModels,['b','c']);
+ assert.equal(c.responseFormat,'json_schema');
+ assert.equal(c.baseUrl,'http://x/v1');
 });

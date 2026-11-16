@@ -24,6 +24,7 @@ export function LookupDialog({target,canSave,onClose,onSave,onManual}:{target:Lo
   <p className="lookup-meaning">{entry.meaningVi}</p>
   <section><h4>Trong bài này</h4><p>{entry.senseInContext}</p>{entry.insufficientContext&&<p className="hint">Ngữ cảnh ngắn, nghĩa có thể chưa chính xác.</p>}</section>
   {entry.collocations.length>0&&<section><h4>Cách dùng thường gặp</h4><ul>{entry.collocations.map((c,i)=><li key={i}><strong>{c.en}</strong>: {c.vi}</li>)}</ul></section>}
+  {(entry.wordFamily??[]).length>0&&<section><h4>Họ từ</h4><ul>{(entry.wordFamily??[]).map((f,i)=><li key={i}><strong>{f.word}</strong>{f.pos&&` (${f.pos})`}: {f.vi}</li>)}</ul></section>}
   {entry.examples.length>0&&<section><h4>Ví dụ</h4>{entry.examples.map((x,i)=><p key={i} className="lookup-example">{x.en}<br/><span>→ {x.vi}</span></p>)}</section>}
   {entry.contrasts.length>0&&<section><h4>Phân biệt</h4><ul>{entry.contrasts.map((c,i)=><li key={i}><strong>{c.word}</strong>: {c.explanation}</li>)}</ul></section>}
   {entry.tip&&<section><h4>Mẹo ghi nhớ</h4><p>{entry.tip}</p></section>}
