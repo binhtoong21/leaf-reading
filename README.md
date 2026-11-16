@@ -27,7 +27,7 @@ Mở **http://127.0.0.1:4318**. Bản này chỉ cần kết nối local sau khi
 ## Cách dùng
 
 1. Thêm bài đọc bằng cách dán văn bản, đặt tiêu đề, nguồn và thẻ chủ đề. Có một bài mẫu để thử ngay.
-2. Mở bài, bôi chọn từ/câu rồi chọn **Ghi chú & highlight**. Chọn từ vựng, cụm từ, ngữ pháp hoặc ghi chú; ghi cách hiểu và ví dụ. Hoặc chọn **Tra từ** để AI giải thích nghĩa trong ngữ cảnh (phát âm, cách dùng, ví dụ, phân biệt, mẹo nhớ), rồi **Lưu ghi chú…** để mở form đã điền sẵn, sửa lại và lưu. Vùng chọn trùng highlight cũ vẫn tra được nhưng không lưu được.
+2. Mở bài, bôi chọn từ/câu rồi chọn **Ghi chú & highlight**. Chọn từ vựng, cụm từ, ngữ pháp hoặc ghi chú; ghi cách hiểu và ví dụ. Hoặc chọn **Tra từ** để AI giải thích nghĩa trong ngữ cảnh (phát âm, cách dùng, họ từ, ví dụ, phân biệt, mẹo nhớ), rồi **Lưu ghi chú…** để mở form đã điền sẵn, sửa lại và lưu. Vùng chọn trùng highlight cũ vẫn tra được nhưng không lưu được.
 3. Nhấn highlight hoặc ghi chú ở lề để chỉnh sửa/xóa. Các highlight không chồng lên nhau. Nội dung bài đã có highlight được khóa sửa để giữ đúng vị trí; tiêu đề, nguồn và thẻ vẫn sửa được.
 4. Đọc tập trung ẩn lề ghi chú, nút Aa đổi cỡ chữ. Đánh dấu tiến độ để theo dõi thư viện.
 5. **Sổ kiến thức** tìm kiếm từ, nghĩa và giải thích; quay lại bài gốc bất kỳ lúc nào.
@@ -47,6 +47,7 @@ notepad .env
 LOOKUP_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
 LOOKUP_API_KEY=<key từ aistudio.google.com>
 LOOKUP_MODEL=gemini-3.5-flash-lite
+LOOKUP_FALLBACK_MODELS=gemini-3.1-flash-lite
 ```
 
 Khởi động lại app sau khi sửa `.env`. Ghi chú:
@@ -54,7 +55,9 @@ Khởi động lại app sau khi sửa `.env`. Ghi chú:
 - Key chỉ nằm ở server trong `.env` (đã nằm trong `.gitignore`), không gửi xuống trình duyệt, không có trong file sao lưu. Lộ key → xóa key trong AI Studio và tạo key mới.
 - Chỉ gửi cụm đã chọn (tối đa 200 ký tự) và câu chứa nó, không gửi cả bài. Gói miễn phí của Gemini có thể dùng dữ liệu gửi lên để cải thiện sản phẩm: không tra từ trong tài liệu riêng tư.
 - Kết quả được cache trong SQLite (bảng `lookup_cache`, tối đa 2.000 mục, không nằm trong bản sao lưu): tra lại cùng chỗ không tốn lượt và xem được khi mất mạng.
-- Tối đa `LOOKUP_DAILY_LIMIT` lượt gọi AI mỗi ngày (mặc định 100, tính cả lượt lỗi); chờ tối đa 20 giây mỗi lượt.
+- Gemini free hay báo quá tải (503). Khi đó app chuyển ngay sang `LOOKUP_FALLBACK_MODELS`, rồi mới thử lại model chính một lần; hết lượt (429) thì không thử lại model chính. Tổng thời gian chờ tối đa 20 giây.
+- Tối đa `LOOKUP_DAILY_LIMIT` lượt gọi AI mỗi ngày (mặc định 100), tính từng lần gọi, kể cả lần lỗi và lần dự phòng.
+- Mặc định dùng structured output (`LOOKUP_RESPONSE_FORMAT=json_schema`): thử thật, chế độ `json_object` trả JSON hỏng 2/10 lần, json_schema 0 lần. Nhà cung cấp không hỗ trợ thì app báo rõ cần đặt `json_object` hoặc `none`.
 - Nội dung do AI tạo có thể sai; bạn luôn sửa trước khi lưu. Gemini Flash (không Lite) thử ngày 16/11/2026 bị quá 30 giây vì suy nghĩ lâu, nên dùng bản Flash-Lite (~2 giây).
 - Chưa cấu hình: nút Tra từ báo lỗi kèm lựa chọn ghi chú thủ công.
 
@@ -79,7 +82,7 @@ src/
   styles.css        Design tokens, layout, responsive
 server/
   index.mjs         Local API và phục vụ bản build
-  lookup.mjs        Tra từ bằng AI: prompt, gọi nhà cung cấp, kiểm tra JSON, cache, giới hạn lượt
+  lookup.mjs        Tra từ bằng AI: prompt v4, gọi nhà cung cấp, json_schema, thử lại/dự phòng, cache, giới hạn lượt
   store.mjs         SQLite, validation, lịch ôn
   dev.mjs           Khởi động API + Vite
 tests/              Kiểm tra tính toàn vẹn lưu trữ và lịch ôn
@@ -93,4 +96,4 @@ npm.cmd test
 npm.cmd run build
 ```
 
-Trạng thái kiểm tra (16/11/2026): 22 test pass (lưu trữ, lịch ôn, điều hướng, tra từ). Tra từ đã chạy thật với Gemini qua cả `npm start` và proxy của `npm run dev`; người dùng đã thử hộp thoại Tra từ trong trình duyệt và xác nhận hoạt động ổn. Người dùng đã chạy thành công TypeScript + Vite production build và dev server. Đã xem ảnh màn thư viện ở desktop, sau đó chỉnh cách xuống dòng sidebar và độ tương phản chữ phụ. Chưa xác minh giao diện sau chỉnh sửa hoặc thao tác highlight/ôn tập trong trình duyệt; công cụ điều khiển trình duyệt dừng vì không xác định được URL hiện tại.
+Trạng thái kiểm tra (16/11/2026): 32 test pass (lưu trữ, lịch ôn, điều hướng, tra từ). Tra từ đã chạy thật với Gemini qua cả `npm start` và proxy của `npm run dev`; người dùng đã thử hộp thoại Tra từ trong trình duyệt và xác nhận hoạt động ổn. Người dùng đã chạy thành công TypeScript + Vite production build và dev server. Đã xem ảnh màn thư viện ở desktop, sau đó chỉnh cách xuống dòng sidebar và độ tương phản chữ phụ. Chưa xác minh giao diện sau chỉnh sửa hoặc thao tác highlight/ôn tập trong trình duyệt; công cụ điều khiển trình duyệt dừng vì không xác định được URL hiện tại.
