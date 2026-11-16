@@ -13,7 +13,8 @@ Thư viện dạng hàng để quét nhanh tiêu đề và tiến độ. Reader 
 - Lưu local SQLite: dữ liệu tách khỏi cache trình duyệt, không cần server dịch vụ hay tài khoản.
 - Bản sao lưu có version và kiểm tra tham chiếu, vị trí, highlight chồng lấn trước khi thay thế.
 - Không sửa nội dung bài đã có highlight: bản đầu ưu tiên giữ đúng liên kết. Bản sau có thể hỗ trợ version bài và re-anchor có kiểm tra.
-- Không tạo nghĩa tự động giả lập. Người học chủ động nhập cách hiểu; AI sẽ là tích hợp tùy chọn có thông báo dữ liệu gửi đi nếu cần trong tương lai.
+- Không tạo nghĩa tự động giả lập. Tra từ bằng AI là tích hợp tùy chọn (bật bằng `.env`): chỉ gửi cụm đã chọn + câu chứa nó, hộp thoại ghi rõ điều này. Kết quả chỉ là gợi ý: người học xem, sửa rồi mới lưu; ghi chú lưu dạng chữ (`meaning`/`note`) nên tìm kiếm, ôn tập và sao lưu v1 không đổi. Kết quả AI đầy đủ chỉ nằm trong cache SQLite riêng.
+- Không có nguồn từ điển không-AI nào cho đủ nghĩa theo ngữ cảnh + collocation + ví dụ có dịch + phân biệt (đã xét dictionaryapi.dev, Wiktionary/Kaikki, dict.minhqnd.com, Cambridge). Adapter theo chuẩn OpenAI `/chat/completions` để đổi nhà cung cấp chỉ bằng `.env`.
 - Không điểm số và streak gây áp lực. Chỉ thể hiện số thẻ đến hạn, tiến độ bài, số ghi chú.
 
 ## Các bước phát triển tiếp theo
@@ -25,3 +26,4 @@ Thư viện dạng hàng để quét nhanh tiêu đề và tiến độ. Reader 
 5. Cloze trong ngữ cảnh, phân biệt nhận biết và sử dụng từ; có thể thay lịch đơn giản bằng FSRS.
 6. Nhập Markdown, PDF có text; xem trước và làm sạch ngắt dòng trước khi lưu. Không mặc định OCR hoặc crawling phức tạp.
 7. Tìm từ/cụm từ đã lưu trong các bài mới, báo các ngữ cảnh gặp lại.
+8. Tra từ: nút "Gợi ý bằng AI" trong form sửa highlight đã có (xem trước + "Dùng gợi ý", không ghi đè); phát âm (dictionaryapi.dev) cho từ đơn; streaming nếu độ trễ thành vấn đề.

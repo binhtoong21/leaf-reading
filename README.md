@@ -1,6 +1,6 @@
 # Leaf — Góc đọc cá nhân
 
-App reading chạy local, không cần tài khoản hay API key. React + TypeScript + Vite cho giao diện, Node HTTP + SQLite cho lưu trữ. Không gửi bài đọc tới dịch vụ bên ngoài.
+App reading chạy local, không cần tài khoản. React + TypeScript + Vite cho giao diện, Node HTTP + SQLite cho lưu trữ. Mặc định không gửi dữ liệu ra ngoài; chỉ tính năng **Tra từ bằng AI** (tùy chọn, cần API key) gửi cụm bạn chọn và câu chứa nó tới nhà cung cấp AI bạn cấu hình.
 
 ## Cài và chạy trên Windows
 
@@ -27,19 +27,43 @@ Mở **http://127.0.0.1:4318**. Bản này chỉ cần kết nối local sau khi
 ## Cách dùng
 
 1. Thêm bài đọc bằng cách dán văn bản, đặt tiêu đề, nguồn và thẻ chủ đề. Có một bài mẫu để thử ngay.
-2. Mở bài, bôi chọn từ/câu rồi chọn **Ghi chú & highlight**. Chọn từ vựng, cụm từ, ngữ pháp hoặc ghi chú; ghi cách hiểu và ví dụ.
+2. Mở bài, bôi chọn từ/câu rồi chọn **Ghi chú & highlight**. Chọn từ vựng, cụm từ, ngữ pháp hoặc ghi chú; ghi cách hiểu và ví dụ. Hoặc chọn **Tra từ** để AI giải thích nghĩa trong ngữ cảnh (phát âm, cách dùng, ví dụ, phân biệt, mẹo nhớ), rồi **Lưu ghi chú…** để mở form đã điền sẵn, sửa lại và lưu. Vùng chọn trùng highlight cũ vẫn tra được nhưng không lưu được.
 3. Nhấn highlight hoặc ghi chú ở lề để chỉnh sửa/xóa. Các highlight không chồng lên nhau. Nội dung bài đã có highlight được khóa sửa để giữ đúng vị trí; tiêu đề, nguồn và thẻ vẫn sửa được.
 4. Đọc tập trung ẩn lề ghi chú, nút Aa đổi cỡ chữ. Đánh dấu tiến độ để theo dõi thư viện.
 5. **Sổ kiến thức** tìm kiếm từ, nghĩa và giải thích; quay lại bài gốc bất kỳ lúc nào.
 6. **Ôn tập** dùng thẻ che nghĩa, kèm ngữ cảnh. Chưa nhớ → 10 phút; hơi khó → ít nhất 1 ngày; đã nhớ → ít nhất 1 ngày, sau đó nhân 2,5; rất dễ → ít nhất 4 ngày, sau đó nhân 4. Giới hạn 365 ngày. Đây là lịch ôn đơn giản, chưa phải thuật toán FSRS. Ghi chú thông thường không vào ôn tập. Mỗi phiên lấy các thẻ đến hạn khi mở; chuyển tab rồi mở lại để làm mới.
 7. **Sao lưu** xuất JSON, **Khôi phục** nhập JSON và thay thế toàn bộ thư viện sau xác nhận. Nên xuất bản hiện tại trước khi khôi phục.
 
+## Tra từ bằng AI (tùy chọn)
+
+Dùng được với mọi nhà cung cấp hỗ trợ chuẩn OpenAI `/chat/completions` (Gemini, OpenRouter, Ollama local…). Hiện cấu hình Gemini:
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+```
+
+```
+LOOKUP_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+LOOKUP_API_KEY=<key từ aistudio.google.com>
+LOOKUP_MODEL=gemini-3.5-flash-lite
+```
+
+Khởi động lại app sau khi sửa `.env`. Ghi chú:
+
+- Key chỉ nằm ở server trong `.env` (đã nằm trong `.gitignore`), không gửi xuống trình duyệt, không có trong file sao lưu. Lộ key → xóa key trong AI Studio và tạo key mới.
+- Chỉ gửi cụm đã chọn (tối đa 200 ký tự) và câu chứa nó, không gửi cả bài. Gói miễn phí của Gemini có thể dùng dữ liệu gửi lên để cải thiện sản phẩm: không tra từ trong tài liệu riêng tư.
+- Kết quả được cache trong SQLite (bảng `lookup_cache`, tối đa 2.000 mục, không nằm trong bản sao lưu): tra lại cùng chỗ không tốn lượt và xem được khi mất mạng.
+- Tối đa `LOOKUP_DAILY_LIMIT` lượt gọi AI mỗi ngày (mặc định 100, tính cả lượt lỗi); chờ tối đa 20 giây mỗi lượt.
+- Nội dung do AI tạo có thể sai; bạn luôn sửa trước khi lưu. Gemini Flash (không Lite) thử ngày 16/11/2026 bị quá 30 giây vì suy nghĩ lâu, nên dùng bản Flash-Lite (~2 giây).
+- Chưa cấu hình: nút Tra từ báo lỗi kèm lựa chọn ghi chú thủ công.
+
 ## Dữ liệu & giới hạn
 
 - SQLite nằm tại `data/leaf.sqlite`, tự tạo khi khởi động. Các file WAL/SHM do SQLite quản lý. Khi sao chép trực tiếp thư mục `data`, dừng app trước; xuất JSON khi app chạy là cách sao lưu thuận tiện hơn.
-- Chỉ lắng nghe `127.0.0.1`. Không thiết kế cho triển khai internet hoặc nhiều người dùng.
+- Chỉ lắng nghe `127.0.0.1`, kiểm tra Host/Origin; API tra từ cần thêm token sinh mỗi lần chạy server. Không thiết kế cho triển khai internet hoặc nhiều người dùng.
 - Dữ liệu chưa mã hóa. Được bảo vệ bởi quyền truy cập tài khoản Windows của bạn.
-- Nhập bài dạng văn bản; chưa trích xuất PDF, OCR hoặc tự tải trang web. Chưa có dịch/giải thích tự động, đồng bộ thiết bị hay câu hỏi TOEIC.
+- Nhập bài dạng văn bản; chưa trích xuất PDF, OCR hoặc tự tải trang web. Giải thích tự động chỉ có qua Tra từ bằng AI (tùy chọn); chưa có đồng bộ thiết bị hay câu hỏi TOEIC.
 - URL giữ màn hình hiện tại và bài đang đọc khi tải lại, hỗ trợ Back/Forward của trình duyệt. Vị trí cuộn, cỡ chữ và chế độ tập trung lưu theo bài trong tab hiện tại bằng sessionStorage; nếu trình duyệt chặn storage, vẫn đọc và lưu ghi chú bình thường nhưng không nhớ các thiết lập này.
 - Backend giới hạn request JSON 12 MB. Nội dung mỗi bài tối đa 500.000 ký tự, tối đa 30 thẻ; mỗi thẻ tối đa 80 ký tự.
 - SQLite đang lưu snapshot thư viện trong một hàng với kiểm tra toàn vẹn trước khi ghi; phù hợp thư viện cá nhân nhỏ. Khi thư viện lớn, nên migrate thành bảng passages/annotations có index.
@@ -55,6 +79,7 @@ src/
   styles.css        Design tokens, layout, responsive
 server/
   index.mjs         Local API và phục vụ bản build
+  lookup.mjs        Tra từ bằng AI: prompt, gọi nhà cung cấp, kiểm tra JSON, cache, giới hạn lượt
   store.mjs         SQLite, validation, lịch ôn
   dev.mjs           Khởi động API + Vite
 tests/              Kiểm tra tính toàn vẹn lưu trữ và lịch ôn
@@ -68,4 +93,4 @@ npm.cmd test
 npm.cmd run build
 ```
 
-Trạng thái kiểm tra: 5 test lưu trữ/lịch ôn đã pass. Người dùng đã chạy thành công TypeScript + Vite production build và dev server. Đã xem ảnh màn thư viện ở desktop, sau đó chỉnh cách xuống dòng sidebar và độ tương phản chữ phụ. Chưa xác minh giao diện sau chỉnh sửa hoặc thao tác highlight/ôn tập trong trình duyệt; công cụ điều khiển trình duyệt dừng vì không xác định được URL hiện tại.
+Trạng thái kiểm tra (16/11/2026): 22 test pass (lưu trữ, lịch ôn, điều hướng, tra từ). Tra từ đã chạy thật với Gemini qua cả `npm start` và proxy của `npm run dev`; giao diện hộp thoại Tra từ chưa được kiểm thử bằng thao tác trong trình duyệt. Người dùng đã chạy thành công TypeScript + Vite production build và dev server. Đã xem ảnh màn thư viện ở desktop, sau đó chỉnh cách xuống dòng sidebar và độ tương phản chữ phụ. Chưa xác minh giao diện sau chỉnh sửa hoặc thao tác highlight/ôn tập trong trình duyệt; công cụ điều khiển trình duyệt dừng vì không xác định được URL hiện tại.
