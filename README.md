@@ -1,45 +1,46 @@
-# Leaf — a personal reading notebook
+# Leaf — Góc đọc cá nhân
 
 [![CI](https://github.com/binhtoong21/leaf-reading/actions/workflows/ci.yml/badge.svg)](https://github.com/binhtoong21/leaf-reading/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/binhtoong21/leaf-reading)](https://github.com/binhtoong21/leaf-reading/releases/latest)
+[![Bản mới nhất](https://img.shields.io/github/v/release/binhtoong21/leaf-reading?label=b%E1%BA%A3n%20m%E1%BB%9Bi%20nh%E1%BA%A5t)](https://github.com/binhtoong21/leaf-reading/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Leaf is a quiet place to read English texts and keep what you learn from them. Paste a passage, highlight words,
-phrases and grammar, write the meaning in your own words, then review them later as flashcards — always with the
-sentence they came from. It was built for Vietnamese learners preparing for TOEIC, so **the interface and the AI
-explanations are in Vietnamese**.
+> **English:** Leaf is a local-first reading notebook for Vietnamese learners of English (TOEIC). Read passages,
+> highlight words, phrases and grammar, write notes in your own words and review them as flashcards with their
+> original context. Optional AI lookup works with any OpenAI-compatible API. The interface is in Vietnamese.
+> Windows installer: see [Releases](https://github.com/binhtoong21/leaf-reading/releases/latest). License: MIT.
 
-Everything stays on your computer: no account, no cloud, one local SQLite file.
+Leaf là nơi đọc bài tiếng Anh và giữ lại những gì bạn học được từ đó. Dán bài đọc, highlight từ vựng, cụm từ, ngữ
+pháp, ghi lại cách hiểu bằng lời của mình, rồi ôn lại bằng thẻ ghi nhớ, luôn kèm câu gốc chứa nó. App được làm cho
+người Việt luyện TOEIC.
 
-![Library](docs/screenshots/library.png)
-![Reader with margin notes](docs/screenshots/reader.png)
+Mọi dữ liệu nằm trên máy bạn: không cần tài khoản, không lên cloud, chỉ một file SQLite.
 
-## Features
+![Thư viện](docs/screenshots/library.png)
+![Đọc bài với lề ghi chú](docs/screenshots/reader.png)
 
-- **Library** of reading passages with tags, source and reading progress.
-- **Reader** with colour-coded highlights (vocabulary, phrase, grammar, note), margin notes, focus mode and adjustable
-  font size.
-- **Notebook** to search everything you saved and jump back to the original context.
-- **Review** with flashcards that hide the meaning and show the sentence; a simple spaced-repetition schedule.
-- **AI lookup (optional)**: select a word or phrase and get its meaning in context, pronunciation, word family,
-  examples and look-alike words, then save it as a note after editing. Works with any OpenAI-compatible API
-  (Gemini, OpenRouter, Ollama…).
-- **Backup / restore** the whole library as one JSON file.
+## Tính năng
 
-## Install (Windows)
+- **Thư viện** bài đọc, có thẻ chủ đề, nguồn và tiến độ đọc.
+- **Đọc bài** với highlight theo màu (từ vựng, cụm từ, ngữ pháp, ghi chú), lề ghi chú, chế độ tập trung, đổi cỡ chữ.
+- **Sổ kiến thức** tìm lại mọi thứ đã lưu và quay về đúng chỗ trong bài gốc.
+- **Ôn tập** bằng thẻ che nghĩa, hiện kèm ngữ cảnh, theo lịch lặp lại ngắt quãng đơn giản.
+- **Tra từ bằng AI (tùy chọn):** chọn từ hoặc cụm từ để xem nghĩa theo ngữ cảnh, phát âm, họ từ, ví dụ, từ dễ nhầm,
+  rồi sửa lại và lưu thành ghi chú. Dùng được với mọi nhà cung cấp chuẩn OpenAI (Gemini, OpenRouter, Ollama…).
+- **Sao lưu / khôi phục** toàn bộ thư viện bằng một file JSON.
 
-1. Download `Leaf-Setup-<version>.exe` from the [latest release](https://github.com/binhtoong21/leaf-reading/releases/latest).
-2. Run it. Windows SmartScreen may warn that the app is unrecognised because the installer is not code-signed:
-   click **More info → Run anyway**.
-3. Leaf installs for the current user and adds **Leaf** shortcuts to the Desktop and the Start menu. Uninstall it
-   from *Settings → Apps*.
+## Cài đặt (Windows)
 
-The desktop app keeps its data in `%APPDATA%\Leaf\leaf.sqlite`. Uninstalling does not delete it.
+1. Tải `Leaf-Setup-<phiên bản>.exe` ở mục [Releases](https://github.com/binhtoong21/leaf-reading/releases/latest).
+2. Chạy file vừa tải. Windows SmartScreen có thể cảnh báo vì file cài chưa được ký số: chọn **More info → Run anyway**.
+3. Leaf được cài cho tài khoản hiện tại, có shortcut **Leaf** ngoài Desktop và trong Start menu. Gỡ trong
+   *Settings → Apps* như app bình thường.
 
-## Run from source
+App lưu dữ liệu ở `%APPDATA%\Leaf\leaf.sqlite`. Gỡ app không xóa dữ liệu này. Cài bản mới đè lên bản cũ vẫn giữ nguyên dữ liệu.
 
-Requires [Node.js](https://nodejs.org/) **22.13 or newer** (Node 24 LTS recommended). Node 22 may print an
-"SQLite is experimental" warning; it is harmless. On Windows, use `npm.cmd` so PowerShell does not block `npm.ps1`.
+## Chạy từ mã nguồn
+
+Cần [Node.js](https://nodejs.org/) **22.13 trở lên** (khuyên dùng Node 24 LTS). Node 22 có thể in cảnh báo
+"SQLite is experimental", không phải lỗi. Trên Windows dùng `npm.cmd` để PowerShell không chặn `npm.ps1`.
 
 ```powershell
 git clone https://github.com/binhtoong21/leaf-reading.git
@@ -47,95 +48,91 @@ cd leaf-reading
 npm.cmd install
 ```
 
-| Command | What it does |
+| Lệnh | Tác dụng |
 |---|---|
-| `npm.cmd run dev` | Development: API on port 4318 + Vite on **http://127.0.0.1:5173** with hot reload |
-| `npm.cmd run build` then `npm.cmd start` | Production build served on **http://127.0.0.1:4318** |
-| `npm.cmd run app` | Build and open the desktop window without installing |
-| `npm.cmd run dist` | Build the Windows installer into `release/` |
-| `npm.cmd test` | Run the tests |
+| `npm.cmd run dev` | Chế độ phát triển: API cổng 4318 + Vite tại **http://127.0.0.1:5173**, tự tải lại khi sửa code |
+| `npm.cmd run build` rồi `npm.cmd start` | Bản build, mở **http://127.0.0.1:4318** |
+| `npm.cmd run app` | Build rồi mở cửa sổ app desktop, không cần cài |
+| `npm.cmd run dist` | Tạo file cài Windows trong thư mục `release/` |
+| `npm.cmd test` | Chạy test |
 
-The browser version stores data in `data/leaf.sqlite` inside the project folder, separate from the desktop app.
-The desktop app and the browser version both use port 4318, so run only one at a time.
-To move data between them, use **Backup** in one and **Restore** in the other.
+Bản chạy trong trình duyệt lưu dữ liệu ở `data/leaf.sqlite` trong thư mục dự án, tách riêng với app desktop. Hai bản
+cùng dùng cổng 4318 nên chỉ chạy được một bản mỗi lúc. Muốn chuyển dữ liệu: **Sao lưu** ở bản này, **Khôi phục** ở bản kia.
 
-## AI lookup (optional)
+## Tra từ bằng AI (tùy chọn)
 
-Leaf calls any provider that supports the OpenAI `/chat/completions` format. Configuration lives in a `.env` file:
+Leaf gọi được mọi nhà cung cấp hỗ trợ chuẩn OpenAI `/chat/completions`. Cấu hình nằm trong file `.env`:
 
-- desktop app: `%APPDATA%\Leaf\.env`
-- from source: `.env` in the project folder (copy it from `.env.example`)
+- app desktop: `%APPDATA%\Leaf\.env`
+- chạy từ mã nguồn: `.env` trong thư mục dự án (sao chép từ `.env.example`)
 
-Example for Google Gemini (free API key from [aistudio.google.com](https://aistudio.google.com)):
+Ví dụ với Google Gemini (lấy API key miễn phí ở [aistudio.google.com](https://aistudio.google.com)):
 
 ```
 LOOKUP_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
-LOOKUP_API_KEY=<your key>
+LOOKUP_API_KEY=<key của bạn>
 LOOKUP_MODEL=gemini-3.5-flash-lite
 LOOKUP_FALLBACK_MODELS=gemini-3.1-flash-lite
 ```
 
-Restart Leaf after editing `.env`. All options are documented in [`.env.example`](.env.example).
+Khởi động lại Leaf sau khi sửa `.env`. Các tùy chọn khác có giải thích trong [`.env.example`](.env.example).
 
-- The key stays in `.env` on your machine. It is never sent to the page and never included in backups.
-- Only the selected text (up to 200 characters) and the sentence around it are sent to the provider, never the whole
-  passage. Free tiers (e.g. Gemini) may use submitted text to improve their products, so do not look up words in
-  private documents.
-- Results are cached locally (up to 2,000 entries), so looking up the same spot again is free and works offline.
-- When the main model is overloaded (503) or out of quota (429), Leaf switches to `LOOKUP_FALLBACK_MODELS`.
-  Total waiting time is capped at 20 seconds.
-- At most `LOOKUP_DAILY_LIMIT` AI calls per day (default 100).
-- AI output can be wrong: you always review and edit it before saving.
+- Key chỉ nằm trong `.env` trên máy bạn, không gửi xuống giao diện, không có trong file sao lưu.
+- Chỉ gửi cụm đã chọn (tối đa 200 ký tự) và câu chứa nó, không gửi cả bài. Gói miễn phí (ví dụ Gemini) có thể dùng
+  dữ liệu gửi lên để cải thiện sản phẩm, nên đừng tra từ trong tài liệu riêng tư.
+- Kết quả được lưu cache trên máy (tối đa 2.000 mục): tra lại cùng chỗ không tốn lượt và xem được khi mất mạng.
+- Khi model chính quá tải (503) hoặc hết lượt (429), Leaf chuyển sang `LOOKUP_FALLBACK_MODELS`. Tổng thời gian chờ tối đa 20 giây.
+- Tối đa `LOOKUP_DAILY_LIMIT` lượt gọi AI mỗi ngày (mặc định 100).
+- Nội dung AI có thể sai: bạn luôn xem và sửa trước khi lưu.
 
-Without configuration, the lookup button explains that AI is not set up and offers a manual note instead.
+Chưa cấu hình thì nút Tra từ báo rõ và gợi ý ghi chú thủ công.
 
-## How to use
+## Cách dùng
 
-1. **Add a passage**: paste the text and give it a title, source and tags. A sample passage is included.
-2. **Highlight**: select a word or sentence, choose **Ghi chú & highlight** (note & highlight), pick a type and write
-   your own explanation. Or choose **Tra từ** (look up) to ask the AI, then save the prefilled note after editing.
-3. Click a highlight or a margin note to edit or delete it. Highlights cannot overlap. Once a passage has highlights
-   its text is locked so positions stay correct; title, source and tags remain editable.
-4. **Notebook** (Sổ kiến thức) searches terms, meanings and notes and links back to the passage.
-5. **Review** (Ôn tập) shows due cards with their context. *Again* → 10 minutes; *Hard* → at least 1 day;
-   *Good* → at least 1 day, then ×2.5; *Easy* → at least 4 days, then ×4; capped at 365 days. Plain notes are not
-   reviewed.
-6. **Backup** (Sao lưu) exports JSON; **Restore** (Khôi phục) replaces the whole library after confirmation.
+1. **Thêm bài đọc:** dán văn bản, đặt tiêu đề, nguồn và thẻ chủ đề. Có sẵn một bài mẫu để thử.
+2. **Highlight:** bôi chọn từ hoặc câu, chọn **Ghi chú & highlight**, chọn loại và ghi cách hiểu của bạn. Hoặc chọn
+   **Tra từ** để hỏi AI, rồi **Lưu ghi chú…** để mở form đã điền sẵn, sửa lại và lưu.
+3. Nhấn vào highlight hoặc ghi chú ở lề để sửa hoặc xóa. Các highlight không chồng lên nhau. Bài đã có highlight sẽ
+   khóa sửa nội dung để giữ đúng vị trí; tiêu đề, nguồn và thẻ vẫn sửa được.
+4. **Sổ kiến thức** tìm theo từ, nghĩa và giải thích; quay lại bài gốc bất cứ lúc nào.
+5. **Ôn tập** hiện các thẻ đến hạn kèm ngữ cảnh. Chưa nhớ → 10 phút; hơi khó → ít nhất 1 ngày; đã nhớ → ít nhất
+   1 ngày, sau đó nhân 2,5; rất dễ → ít nhất 4 ngày, sau đó nhân 4; tối đa 365 ngày. Ghi chú thường không vào ôn tập.
+6. **Sao lưu** xuất file JSON; **Khôi phục** thay toàn bộ thư viện sau khi xác nhận. Nên sao lưu bản hiện tại trước khi khôi phục.
 
-## Data, privacy and limits
+## Dữ liệu, quyền riêng tư và giới hạn
 
-- The server listens on `127.0.0.1` only and checks Host/Origin headers; the lookup API also needs a per-run token.
-  It is not designed for internet deployment or multiple users.
-- Data is not encrypted; it is protected by your Windows account.
-- Plain-text import only: no PDF extraction, OCR or web scraping.
-- Requests are limited to 12 MB; a passage is limited to 500,000 characters and 30 tags of up to 80 characters.
-- The library is stored as one validated snapshot row in SQLite, which suits a personal library.
+- Server chỉ lắng nghe `127.0.0.1` và kiểm tra Host/Origin; API tra từ cần thêm token sinh mỗi lần chạy. Không thiết
+  kế để đưa lên internet hay cho nhiều người dùng chung.
+- Dữ liệu không mã hóa, được bảo vệ bởi tài khoản Windows của bạn.
+- Chỉ nhập bài dạng văn bản: chưa trích xuất PDF, OCR hay tự tải trang web.
+- Request tối đa 12 MB; mỗi bài tối đa 500.000 ký tự, 30 thẻ, mỗi thẻ tối đa 80 ký tự.
+- Thư viện lưu thành một bản snapshot đã kiểm tra toàn vẹn trong SQLite, phù hợp thư viện cá nhân.
 
-## Project structure
+## Cấu trúc
 
 ```text
-src/                React UI (components, features, lib)
+src/                Giao diện React (components, features, lib)
 server/
-  index.mjs         Local HTTP API and static file server (startServer)
-  store.mjs         SQLite storage, validation, review schedule
-  lookup.mjs        AI lookup: prompt, provider call, retry/fallback, cache, daily cap
-  dev.mjs           Starts the API and Vite together
-electron/main.mjs   Desktop shell: starts the server in-process and opens the window
-build/              App icon (edit icon.svg, then run `npm.cmd run icon`)
-tests/              Node test runner tests
-docs/               Product notes (Vietnamese) and screenshots
+  index.mjs         API local và phục vụ bản build (startServer)
+  store.mjs         Lưu trữ SQLite, kiểm tra dữ liệu, lịch ôn
+  lookup.mjs        Tra từ bằng AI: prompt, gọi nhà cung cấp, thử lại/dự phòng, cache, giới hạn lượt
+  dev.mjs           Chạy API và Vite cùng lúc
+electron/main.mjs   Vỏ app desktop: chạy server bên trong và mở cửa sổ
+build/              Icon app (sửa icon.svg rồi chạy `npm.cmd run icon`)
+tests/              Test bằng Node test runner
+docs/               Định hướng sản phẩm và ảnh chụp màn hình
 ```
 
-## Releasing
+## Phát hành bản mới
 
-Pushing a tag `v<version>` that matches `version` in `package.json` builds the Windows installer on GitHub Actions
-and publishes it as a GitHub Release:
+Đẩy một tag `v<phiên bản>` trùng với `version` trong `package.json` thì GitHub Actions tự build file cài Windows và
+đăng lên mục Releases:
 
 ```powershell
-npm.cmd version patch   # bumps package.json and creates the tag, e.g. v1.0.1
+npm.cmd version patch   # tăng phiên bản trong package.json và tạo tag, ví dụ v1.0.1
 git push origin main --follow-tags
 ```
 
-## License
+## Giấy phép
 
 [MIT](LICENSE)
