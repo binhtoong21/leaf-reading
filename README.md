@@ -1,13 +1,12 @@
 # Leaf — Góc đọc cá nhân
 
 [![CI](https://github.com/binhtoong21/leaf-reading/actions/workflows/ci.yml/badge.svg)](https://github.com/binhtoong21/leaf-reading/actions/workflows/ci.yml)
-[![Bản mới nhất](https://img.shields.io/github/v/release/binhtoong21/leaf-reading?label=b%E1%BA%A3n%20m%E1%BB%9Bi%20nh%E1%BA%A5t)](https://github.com/binhtoong21/leaf-reading/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 > **English:** Leaf is a local-first reading notebook for Vietnamese learners of English (TOEIC). Read passages,
 > highlight words, phrases and grammar, write notes in your own words and review them as flashcards with their
 > original context. Optional AI lookup works with any OpenAI-compatible API. The interface is in Vietnamese.
-> Windows installer: see [Releases](https://github.com/binhtoong21/leaf-reading/releases/latest). License: MIT.
+> Runs in the browser or as a Windows desktop app built from source (`npm run dist`). License: MIT.
 
 Leaf là nơi đọc bài tiếng Anh và giữ lại những gì bạn học được từ đó. Dán bài đọc, highlight từ vựng, cụm từ, ngữ
 pháp, ghi lại cách hiểu bằng lời của mình, rồi ôn lại bằng thẻ ghi nhớ, luôn kèm câu gốc chứa nó. App được làm cho
@@ -28,16 +27,11 @@ Mọi dữ liệu nằm trên máy bạn: không cần tài khoản, không lên
   rồi sửa lại và lưu thành ghi chú. Dùng được với mọi nhà cung cấp chuẩn OpenAI (Gemini, OpenRouter, Ollama…).
 - **Sao lưu / khôi phục** toàn bộ thư viện bằng một file JSON.
 
-## Cài đặt (Windows)
+## Cài đặt
 
-1. Tải `Leaf-Setup-<phiên bản>.exe` ở mục [Releases](https://github.com/binhtoong21/leaf-reading/releases/latest).
-2. Chạy file vừa tải. Windows SmartScreen có thể cảnh báo vì file cài chưa được ký số: chọn **More info → Run anyway**.
-3. Leaf được cài cho tài khoản hiện tại, có shortcut **Leaf** ngoài Desktop và trong Start menu. Gỡ trong
-   *Settings → Apps* như app bình thường.
+Hiện chưa có bản cài dựng sẵn để tải. Bạn chạy Leaf từ mã nguồn, trong trình duyệt hoặc dưới dạng app desktop Windows tự build.
 
-App lưu dữ liệu ở `%APPDATA%\Leaf\leaf.sqlite`. Gỡ app không xóa dữ liệu này. Cài bản mới đè lên bản cũ vẫn giữ nguyên dữ liệu.
-
-## Chạy từ mã nguồn
+### Chạy từ mã nguồn
 
 Cần [Node.js](https://nodejs.org/) **22.13 trở lên** (khuyên dùng Node 24 LTS). Node 22 có thể in cảnh báo
 "SQLite is experimental", không phải lỗi. Trên Windows dùng `npm.cmd` để PowerShell không chặn `npm.ps1`.
@@ -58,6 +52,16 @@ npm.cmd install
 
 Bản chạy trong trình duyệt lưu dữ liệu ở `data/leaf.sqlite` trong thư mục dự án, tách riêng với app desktop. Hai bản
 cùng dùng cổng 4318 nên chỉ chạy được một bản mỗi lúc. Muốn chuyển dữ liệu: **Sao lưu** ở bản này, **Khôi phục** ở bản kia.
+
+### App desktop Windows
+
+1. Chạy `npm.cmd run dist`. File cài nằm ở `release\Leaf-Setup-<phiên bản>.exe`.
+2. Chạy file đó. Windows SmartScreen có thể cảnh báo vì file cài chưa được ký số: chọn **More info → Run anyway**.
+3. Leaf được cài cho tài khoản hiện tại, có shortcut **Leaf** ngoài Desktop và trong Start menu. Gỡ trong
+   *Settings → Apps* như app bình thường.
+
+App desktop lưu dữ liệu ở `%APPDATA%\Leaf\leaf.sqlite`. Gỡ app không xóa dữ liệu này, cài bản mới đè lên vẫn giữ
+nguyên dữ liệu. Muốn bật tra từ AI, tạo file `%APPDATA%\Leaf\.env` theo mục dưới đây.
 
 ## Tra từ bằng AI (tùy chọn)
 
@@ -123,10 +127,10 @@ tests/              Test bằng Node test runner
 docs/               Định hướng sản phẩm và ảnh chụp màn hình
 ```
 
-## Phát hành bản mới
+## Phát hành (dành cho người duy trì)
 
-Đẩy một tag `v<phiên bản>` trùng với `version` trong `package.json` thì GitHub Actions tự build file cài Windows và
-đăng lên mục Releases:
+Repo đã có sẵn workflow phát hành nhưng chưa dùng. Đẩy một tag `v<phiên bản>` trùng với `version` trong `package.json`
+thì GitHub Actions tự build file cài Windows và đăng lên mục Releases:
 
 ```powershell
 npm.cmd version patch   # tăng phiên bản trong package.json và tạo tag, ví dụ v1.0.1
