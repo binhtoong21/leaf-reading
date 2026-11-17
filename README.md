@@ -24,6 +24,21 @@ npm.cmd start
 
 Mở **http://127.0.0.1:4318**. Bản này chỉ cần kết nối local sau khi cài dependency. Không cần mạng để đọc và ghi chú.
 
+## App desktop (Windows)
+
+Đóng gói thành app có file cài đặt:
+
+```powershell
+npm.cmd install
+npm.cmd run dist
+```
+
+File cài nằm trong `release\Leaf Setup 1.0.0.exe`. Chạy file này: app được cài cho tài khoản hiện tại, có shortcut **Leaf** ngoài Desktop và trong Start menu, gỡ được trong *Settings → Apps*. Windows có thể hiện cảnh báo SmartScreen vì app chưa ký số: chọn *More info → Run anyway*.
+
+App desktop lưu dữ liệu ở `%APPDATA%\Leaf\leaf.sqlite` và đọc cấu hình tra từ từ `%APPDATA%\Leaf\.env` (cùng định dạng `.env.example`). Muốn dùng dữ liệu của bản web, tắt bản web rồi chép `data\leaf.sqlite` (kèm `leaf.sqlite-wal`, `leaf.sqlite-shm` nếu có) vào thư mục đó trước khi mở app, hoặc dùng **Sao lưu** ở bản web và **Khôi phục** trong app. App và bản web dùng chung cổng 4318 nên không chạy cùng lúc được.
+
+Chạy thử mà không cần cài: `npm.cmd run app`. Đổi icon: sửa `build/icon.svg` rồi chạy `npm.cmd run icon`.
+
 ## Cách dùng
 
 1. Thêm bài đọc bằng cách dán văn bản, đặt tiêu đề, nguồn và thẻ chủ đề. Có một bài mẫu để thử ngay.

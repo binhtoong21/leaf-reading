@@ -1,5 +1,7 @@
 import { spawn } from 'node:child_process';
-import './index.mjs';
+import {startServer} from './index.mjs';
+const api=await startServer();
+console.log('Leaf API: '+api.url);
 const vite = spawn(process.execPath, ['node_modules/vite/bin/vite.js','--host','127.0.0.1'], {stdio:'inherit'});
 process.on('SIGINT',()=>{vite.kill();process.exit()});
 process.on('SIGTERM',()=>{vite.kill();process.exit()});

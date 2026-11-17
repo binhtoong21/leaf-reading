@@ -1,22 +1,25 @@
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 import {resolve,extname,sep} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {createStore,schedule,validateLibrary} from './store.mjs';
 import {createLookupService,extractContext,LookupError} from './lookup.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
-try{process.loadEnvFile(resolve(root,'.env'))}catch(e){if(e?.code!=='ENOENT')console.warn('Không đọc được file .env:',e.message)}
-const store=createStore(resolve(root,'data/leaf.sqlite'));
+const send=(res,code,data)=>{res.writeHead(code,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data));};
+
+export function startServer({dataDir=resolve(root,'data'),envFile=resolve(root,'.env'),distDir=resolve(root,'dist'),port=4318}={}){
+try{process.loadEnvFile(envFile)}catch(e){if(e?.code!=='ENOENT')console.warn('Không đọc được file .env:',e.message)}
+const store=createStore(resolve(dataDir,'leaf.sqlite'));
 const lookup=createLookupService({db:store.db});
 const sessionToken=randomUUID();
-const send=(res,code,data)=>{res.writeHead(code,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data));};
+let hostRe=/^$/,originRe=/^$/;
 const server=createServer(async(req,res)=>{
   try{
     const url=new URL(req.url,'http://127.0.0.1');
     if(url.pathname.startsWith('/api/')){
-      if(!/^(127\.0\.0\.1|localhost):(4318|5173)$/.test(req.headers.host||'')) return send(res,403,{error:'Host không được phép.'});
-      if(req.headers.origin && !/^http:\/\/(127\.0\.0\.1|localhost):(4318|5173)$/.test(req.headers.origin)) return send(res,403,{error:'Origin không được phép.'});
+      if(!hostRe.test(req.headers.host||'')) return send(res,403,{error:'Host không được phép.'});
+      if(req.headers.origin && !originRe.test(req.headers.origin)) return send(res,403,{error:'Origin không được phép.'});
       let body={};
       if(!['GET','HEAD'].includes(req.method)){
         if(!req.headers['content-type']?.startsWith('application/json')) return send(res,415,{error:'Cần dữ liệu JSON.'});
@@ -57,10 +60,24 @@ const server=createServer(async(req,res)=>{
       if(route==='/annotations'&&req.method==='POST')return send(res,201,store.mutate(d=>d.annotations.push({...body,id:randomUUID(),due:new Date().toISOString(),interval:0,reviews:0})));
       return send(res,404,{error:'Đường dẫn không tồn tại.'});
     }
-    const dist=resolve(root,'dist');let file=resolve(dist,'.'+decodeURIComponent(url.pathname));
+    const dist=distDir;let file=resolve(dist,'.'+decodeURIComponent(url.pathname));
     if(file!==dist&&!file.startsWith(dist+sep))return send(res,403,{error:'Forbidden'});
     if(!extname(file))file=resolve(dist,'index.html');
     try{const bytes=await readFile(file);res.writeHead(200,{'Content-Type':({'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml'})[extname(file)]||'application/octet-stream'});res.end(bytes);}catch{send(res,404,{error:'Chạy npm run build trước khi mở bản production.'});}
   }catch(error){send(res,400,{error:error.message||'Không thể xử lý yêu cầu.'});}
 });
-server.listen(4318,'127.0.0.1',()=>console.log('Leaf API / production: http://127.0.0.1:4318'));
+return new Promise((ok,fail)=>{
+  server.once('error',e=>{store.close();fail(e)});
+  server.listen(port,'127.0.0.1',()=>{
+    const actual=server.address().port;
+    hostRe=new RegExp(`^(127\\.0\\.0\\.1|localhost):(${actual}|5173)$`);
+    originRe=new RegExp(`^http://(127\\.0\\.0\\.1|localhost):(${actual}|5173)$`);
+    server.on('close',()=>store.close());
+    const url=`http://127.0.0.1:${actual}`;
+    ok({server,port:actual,url,close:()=>new Promise(done=>{server.close(()=>done());server.closeAllConnections();})});
+  });
+});
+}
+if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
+  startServer().then(s=>console.log('Leaf API / production: '+s.url)).catch(e=>{console.error('Không khởi động được Leaf:',e.message);process.exit(1)});
+}
