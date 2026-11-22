@@ -1,6 +1,6 @@
 import {useEffect, useLayoutEffect, useState} from 'react';
 
-type ReaderSession = {scrollY: number; size: number; focus: boolean};
+type ReaderSession = {scrollY: number; size: number; focus: boolean; notesOpen: boolean};
 const keyFor = (id: string) => `leaf:reader:${id}`;
 
 function readSession(id: string): ReaderSession {
@@ -10,9 +10,10 @@ function readSession(id: string): ReaderSession {
       scrollY: Number.isFinite(data.scrollY) && data.scrollY >= 0 ? data.scrollY : 0,
       size: [18, 20, 22, 24].includes(data.size) ? data.size : 20,
       focus: data.focus === true,
+      notesOpen: data.notesOpen !== false,
     };
   } catch {
-    return {scrollY: 0, size: 20, focus: false};
+    return {scrollY: 0, size: 20, focus: false, notesOpen: true};
   }
 }
 
@@ -28,6 +29,7 @@ export function useReaderSession(passageId: string) {
   const [initial] = useState(() => readSession(passageId));
   const [size, setSize] = useState(initial.size);
   const [focus, setFocus] = useState(initial.focus);
+  const [notesOpen, setNotesOpen] = useState(initial.notesOpen);
 
   useLayoutEffect(() => {
     const previous = window.history.scrollRestoration;
@@ -42,7 +44,7 @@ export function useReaderSession(passageId: string) {
   useEffect(() => {
     let position = readSession(passageId).scrollY;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const save = () => saveSession(passageId, {scrollY: position, size, focus});
+    const save = () => saveSession(passageId, {scrollY: position, size, focus, notesOpen});
     const onScroll = () => {
       position = window.scrollY;
       clearTimeout(timer);
@@ -60,7 +62,7 @@ export function useReaderSession(passageId: string) {
       window.removeEventListener('pagehide', save);
       document.removeEventListener('visibilitychange', onHidden);
     };
-  }, [passageId, size, focus]);
+  }, [passageId, size, focus, notesOpen]);
 
-  return {size, setSize, focus, setFocus};
+  return {size, setSize, focus, setFocus, notesOpen, setNotesOpen};
 }

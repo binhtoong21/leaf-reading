@@ -33,3 +33,12 @@
 .note-text .note-item::before{content:'•';position:absolute;left:3px;color:var(--muted)}
 .modal .note-text .note-translation{color:var(--muted)}
 .modal textarea.note-input{max-height:50dvh;field-sizing:content;min-height:7em}
+
+/* Reader panel controls stay available when either sidebar is collapsed. */
+.app-shell.left-sidebar-collapsed{grid-template-columns:minmax(0,1fr)}
+.sidebar[hidden],.margin-notes[hidden]{display:none}
+.reader.notes-collapsed .reading-layout{grid-template-columns:minmax(0,1fr);max-width:850px}
+.reader-toolbar .icon-button.active{background:var(--pale);color:var(--green)}
+.right-sidebar-icon{transform:scaleX(-1)}
+.left-sidebar-collapsed .selection-bar{left:50%}
+@media(max-width:450px){.reader-toolbar{padding:0 10px;gap:4px}.reader-toolbar .icon-button{padding:7px}.toolbar-right{gap:2px}}
