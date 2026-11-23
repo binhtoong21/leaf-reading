@@ -3,12 +3,14 @@ import {PencilSimple} from '@phosphor-icons/react';
 import {Modal} from '../components/Modal';
 import {NoteText} from '../components/NoteText';
 import {kinds,type Annotation,type Kind} from '../lib/types';
+import {useSpeech} from '../lib/useSpeech';
+import {SpeakButton} from '../components/SpeakButton';
 const noteRows=(note='')=>Math.min(18,Math.max(4,note.split('\n').reduce((n,l)=>n+Math.max(1,Math.ceil(l.length/75)),0)+1));
 export function AnnotationForm({initial,onClose,onSave,onDelete}:{initial:Partial<Annotation>&{quote:string};onClose:()=>void;onSave:(data:unknown)=>Promise<void>;onDelete?:()=>Promise<void>}){
  const [kind,setKind]=useState<Kind>(initial.kind||'vocabulary'); const [error,setError]=useState(''); const [busy,setBusy]=useState(false); const [editing,setEditing]=useState(!initial.id);
- const wide=(initial.note?.length??0)>300;
+ const wide=(initial.note?.length??0)>300; const speech=useSpeech();
  const act=async(fn:()=>Promise<void>)=>{setBusy(true);try{await fn();onClose()}catch(e){setError((e as Error).message)}finally{setBusy(false)}};
- if(!editing)return <Modal wide={wide} title="Ghi chú của bạn" onClose={onClose}><blockquote className={'quote '+kind}>{initial.quote}</blockquote><div className="note-view"><span className={'tag '+kind}>{kinds[kind]}</span><h3>{initial.meaning}</h3>{initial.note&&<NoteText text={initial.note}/>}</div>
+ if(!editing)return <Modal wide={wide} title="Ghi chú của bạn" onClose={onClose}><blockquote className={'quote '+kind}>{initial.quote}</blockquote><div className="note-view"><div className="note-view-head"><span className={'tag '+kind}>{kinds[kind]}</span><SpeakButton text={initial.quote} speech={speech}/><SpeakButton text={initial.quote} slow speech={speech}/></div><h3>{initial.meaning}</h3>{initial.note&&<NoteText text={initial.note}/>}</div>
  {error&&<p role="alert" className="error">{error}</p>}<footer className="modal-actions">{onDelete&&<button type="button" className="danger ghost" disabled={busy} onClick={()=>void act(onDelete)}>Xóa highlight</button>}<button type="button" className="secondary" onClick={onClose}>Đóng</button><button type="button" autoFocus onClick={()=>setEditing(true)}><PencilSimple/>Sửa ghi chú</button></footer></Modal>;
  return <Modal wide={wide} title={initial.id?'Ghi chú của bạn':'Giữ lại điều vừa học'} onClose={onClose}><blockquote className={'quote '+kind}>{initial.quote}</blockquote><form onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget);void act(()=>onSave({kind,meaning:String(f.get('meaning')).trim(),note:String(f.get('note')).trim()}))}}>
  <div className="kind-options">{Object.entries(kinds).map(([k,v])=><button type="button" key={k} className={kind===k?'kind selected '+k:'kind'} onClick={()=>setKind(k as Kind)}>{v}</button>)}</div>

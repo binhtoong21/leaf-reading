@@ -4,9 +4,12 @@ import {Modal} from '../components/Modal';
 import {lookup,type LookupTarget} from '../lib/api';
 import {formatNote} from '../lib/lookup';
 import {kinds,type Kind,type LookupEntry} from '../lib/types';
+import {useSpeech} from '../lib/useSpeech';
+import {SpeakButton} from '../components/SpeakButton';
 type Draft={kind:Kind;meaning:string;note:string};
 export function LookupDialog({target,canSave,onClose,onSave,onManual}:{target:LookupTarget;canSave:boolean;onClose:()=>void;onSave:(draft:Draft)=>Promise<void>;onManual:()=>void}){
  const [entry,setEntry]=useState<LookupEntry|null>(null),[error,setError]=useState(''),[attempt,setAttempt]=useState(0),[draft,setDraft]=useState<Draft|null>(null),[busy,setBusy]=useState(false),[saveError,setSaveError]=useState('');
+ const speech=useSpeech();
  useEffect(()=>{let live=true;setEntry(null);setError('');lookup(target).then(r=>{if(live)setEntry(r.entry)}).catch(e=>{if(live)setError((e as Error).message)});return()=>{live=false}},[target,attempt]);
  const save=async()=>{if(!draft)return;setBusy(true);setSaveError('');try{await onSave({kind:draft.kind,meaning:draft.meaning.trim(),note:draft.note.trim()});onClose()}catch(e){setSaveError((e as Error).message)}finally{setBusy(false)}};
  return <Modal wide title={draft?'Lưu vào sổ kiến thức':'Tra từ'} onClose={onClose}><blockquote className={'quote '+(draft?.kind??entry?.kind??'vocabulary')}>{target.quote}</blockquote>
@@ -20,12 +23,13 @@ export function LookupDialog({target,canSave,onClose,onSave,onManual}:{target:Lo
  :error?<><p role="alert" className="error">{error}</p><footer className="modal-actions"><button type="button" className="secondary" onClick={onClose}>Đóng</button>{canSave&&<button type="button" className="secondary" onClick={onManual}><PencilSimple/>Ghi chú thủ công</button>}<button type="button" onClick={()=>setAttempt(a=>a+1)}><ArrowClockwise/>Thử lại</button></footer></>
  :!entry?<div className="lookup-loading" role="status" aria-live="polite"><span className="lookup-spinner" aria-hidden="true"/>Đang tra nghĩa trong ngữ cảnh…</div>
  :<><div className="lookup-entry">
-  <div className="lookup-head"><strong>{entry.headword}</strong>{entry.ipa&&<span className="lookup-ipa">{entry.ipa}</span>}{entry.pos&&<span className="lookup-pos">{entry.pos}</span>}</div>
+  <div className="lookup-head"><strong>{entry.headword}</strong>{entry.ipa&&<span className="lookup-ipa">{entry.ipa}</span>}<SpeakButton text={entry.headword} speech={speech}/><SpeakButton text={entry.headword} slow speech={speech}/>{entry.pos&&<span className="lookup-pos">{entry.pos}</span>}</div>
+  {speech.supported&&speech.ready&&!speech.voice&&<p className="hint">Máy chưa có giọng đọc tiếng Anh nên chưa nghe được phát âm. Cài thêm trong Windows: Settings → Time & Language → Speech → Add voices → English (United States), rồi mở lại Leaf hoặc tải lại trang.</p>}
   <p className="lookup-meaning">{entry.meaningVi}</p>
   <section><h4>Trong bài này</h4><p>{entry.senseInContext}</p>{entry.insufficientContext&&<p className="hint">Ngữ cảnh ngắn, nghĩa có thể chưa chính xác.</p>}</section>
-  {entry.collocations.length>0&&<section><h4>Cách dùng thường gặp</h4><ul>{entry.collocations.map((c,i)=><li key={i}><strong>{c.en}</strong>: {c.vi}</li>)}</ul></section>}
+  {entry.collocations.length>0&&<section><h4>Cách dùng thường gặp</h4><ul>{entry.collocations.map((c,i)=><li key={i}><strong>{c.en}</strong><SpeakButton text={c.en} speech={speech}/>: {c.vi}</li>)}</ul></section>}
   {(entry.wordFamily??[]).length>0&&<section><h4>Họ từ</h4><ul>{(entry.wordFamily??[]).map((f,i)=><li key={i}><strong>{f.word}</strong>{f.pos&&` (${f.pos})`}: {f.vi}</li>)}</ul></section>}
-  {entry.examples.length>0&&<section><h4>Ví dụ</h4>{entry.examples.map((x,i)=><p key={i} className="lookup-example">{x.en}<br/><span>→ {x.vi}</span></p>)}</section>}
+  {entry.examples.length>0&&<section><h4>Ví dụ</h4>{entry.examples.map((x,i)=><p key={i} className="lookup-example">{x.en}<SpeakButton text={x.en} speech={speech}/><br/><span>→ {x.vi}</span></p>)}</section>}
   {entry.contrasts.length>0&&<section><h4>Phân biệt</h4><ul>{entry.contrasts.map((c,i)=><li key={i}><strong>{c.word}</strong>: {c.explanation}</li>)}</ul></section>}
   {entry.tip&&<section><h4>Mẹo ghi nhớ</h4><p>{entry.tip}</p></section>}
   <p className="hint">Nội dung do AI tạo, có thể sai. Chỉ phần bạn chọn và câu chứa nó được gửi tới nhà cung cấp AI.</p></div>
