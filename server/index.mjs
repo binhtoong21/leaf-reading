@@ -25,7 +25,7 @@ const server=createServer(async(req,res)=>{
         if(!req.headers['content-type']?.startsWith('application/json')) return send(res,415,{error:'Cần dữ liệu JSON.'});
         const maxBody=url.pathname==='/api/lookup'?4096:12_000_000;
         let raw=''; for await(const chunk of req){raw+=chunk;if(Buffer.byteLength(raw)>maxBody) return send(res,413,{error:maxBody===4096?'Yêu cầu tra từ quá lớn.':'Dữ liệu vượt quá 12 MB.'});}
-        try{body=JSON.parse(raw);}catch{return send(res,400,{error:'JSON không hợp lệ.'});}
+        try{body=raw?JSON.parse(raw):{};}catch{return send(res,400,{error:'JSON không hợp lệ.'});}
       }
       const route=url.pathname.slice(4);
       if(route==='/library'&&req.method==='GET')return send(res,200,store.read());
